@@ -8,41 +8,40 @@
 import numpy as np
 
 
-def get_elastic_tensor(filename):
+def get_elastic_tensor(OUTCAR_file):
     """
     Reads the elastic tensor from the OUTCAR.
     Args:
-        filename : the name of the VASP OUTCAR
+        OUTCAR_file : Path to the VASP OUTCAR file
     Returns:
         elastic_tensor : 6x6 tensor of the elastic moduli
     """
-    f = open(filename, "r")
-    lines = f.readlines()
-    f.close()
-    ii = 0
-    copy = False
+    with open(OUTCAR_file, "r") as f:
+        lines = f.readlines()
+
+    tensor_lines = False
     elastic_tensor = []
     for line in lines:
         inp = line.split()
-        if ii >= 6:
-            continue
         if not inp:
             continue
         if len(inp) < 4 or len(inp) > 7:
             continue
-        if len(inp) == 4 and inp[0] == "TOTAL":
-            copy = True
-        if copy:
-            if len(inp) == 7 and len(inp[0]) == 2:
-                elastic_tensor.append(inp[1:])
-                ii += 1
-    return np.asarray(elastic_tensor).astype(np.float)
+        elif len(inp) == 4 and inp[0] == "TOTAL":
+            tensor_lines = True
+        if tensor_lines and len(inp) == 7 and len(inp[0]) == 2:
+            elastic_tensor.append(inp[1:])
+        if len(elastic_tensor) >= 6:
+            break
+
+    return np.asarray(elastic_tensor).astype(float)
 
 
-def main():
+def main(OUTCAR_file="OUTCAR"):
     # Elastic tensor
-    elastic_tensor = get_elastic_tensor("OUTCAR")
+    elastic_tensor = get_elastic_tensor(OUTCAR_file)  # (kBar)
     c_ij = elastic_tensor / 10  # (GPa)
+    print(c_ij)
 
     # Compliance tensor (GPa)
     s_ij = np.linalg.inv(c_ij)
