@@ -1,28 +1,22 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# ## Elastic Properties
-# ### Code for extracting elastic tensor and calculating mechanical properties from VASP OUTCAR
-# 
+# Elastic Properties.py -  Extract elastic tensor and calculate mechanical properties from VASP OUTCAR file
 # Equations can be found at https://www.materialsproject.org/wiki/index.php/Elasticity_calculations
-
-# In[1]:
 
 
 import numpy as np
 
 
-# In[2]:
-
-
 def get_elastic_tensor(filename):
-    ''' Reads the elastic tensor from the OUTCAR. 
+    """
+    Reads the elastic tensor from the OUTCAR.
     Args:
-        filename : the name of the vasp OUTCAR
+        filename : the name of the VASP OUTCAR
     Returns:
         elastic_tensor : 6x6 tensor of the elastic moduli
-    '''
-    f = open(filename,"r")
+    """
+    f = open(filename, "r")
     lines = f.readlines()
     f.close()
     ii = 0
@@ -32,11 +26,11 @@ def get_elastic_tensor(filename):
         inp = line.split()
         if ii >= 6:
             continue
-        if inp == []:
-            continue 
+        if not inp:
+            continue
         if len(inp) < 4 or len(inp) > 7:
             continue
-        if len(inp) == 4 and inp[0] == 'TOTAL':
+        if len(inp) == 4 and inp[0] == "TOTAL":
             copy = True
         if copy:
             if len(inp) == 7 and len(inp[0]) == 2:
@@ -45,136 +39,60 @@ def get_elastic_tensor(filename):
     return np.asarray(elastic_tensor).astype(np.float)
 
 
-# ### Elastic tensor $C_{ij}$
-
-# In[3]:
-
-
-elastic_tensor = get_elastic_tensor('OUTCAR')
-
-
-# Divide by 10 to convert kBar to GPa
-
-# In[4]:
-
-
-Cij = elastic_tensor/10
-Cij
-
-
-# ### Compliance tensor, $s_{ij}$ $(GPa^{-1})$
-# $s_{ij} = C_{ij}^{-1}$
-
-# In[5]:
-
-
-Sij = np.linalg.inv(Cij)
-
-
-# ### Voigt bulk modulus, $K_v$ $(GPa)$
-# $9K_v = (C_{11}+C_{22}+C_{33}) + 2(C_{12} + C_{23} + C_{31}) $
-
-# In[6]:
-
-
-Kv = ((Cij[0,0] + Cij[1,1] + Cij[2,2]) + 2 * (Cij[0,1] + Cij[1,2] + Cij[2,0])) / 9
-Kv
-
-
-# ### Reuss bulk modulus, $K_R$ $(GPa)$
-# $1/K_R = (s_{11}+s_{22}+s_{33}) + 2(s_{12} + s_{23} + s_{31})$
-
-# In[7]:
-
-
-Kr = 1/((Sij[0,0] + Sij[1,1] + Sij[2,2]) + 2 * (Sij[0,1] + Sij[1,2] + Sij[2,0])) 
-Kr
-
-
-# ### Voigt shear modulus, $G_v$ $(GPa)$
-# $15 G_v = (C_{11}+C_{22}+C_{33}) - (C_{12} + C_{23} + C_{31}) + 3(C_{44} + C_{55} + C_{66})$
-
-# In[8]:
-
-
-Gv = ((Cij[0,0] + Cij[1,1] + Cij[2,2]) - (Cij[0,1] + Cij[1,2] + Cij[2,0]) + 3 * (Cij[3,3] + Cij[4,4] + Cij[5,5]))/15
-Gv
-
-
-# ### Reuss shear modulus, $G_v$ $(GPa)$
-# $ 15/G_R = 4(s_{11}+s_{22}+s_{33}) - 4(s_{12} + s_{23} + s_{31}) + 3(s_{44} + s_{55} + s_{66})$
-
-# In[9]:
-
-
-Gr = 15 / (4 * (Sij[0,0] + Sij[1,1] + Sij[2,2]) - 4 * (Sij[0,1] + Sij[1,2] + Sij[2,0]) + 3 * (Sij[3,3] + Sij[4,4] + Sij[5,5]))
-Gr
-
-
-# ### Voigt-Reuss-Hill bulk modulus, $K_{VRH}$ $(GPa)$
-# $K_{VRH} = (K_R + K_v)/2$
-
-# In[10]:
-
-
-Kvrh = (Kv + Kr)/2
-Kvrh
-
-
-# ### Voigt-Reuss-Hill shear modulus, $G_{VRH}$ $(GPa)$
-# $G_{VRH} = (G_R + G_v)/2$
-
-# In[11]:
-
-
-Gvrh = (Gv + Gr)/2
-Gvrh
-
-
-# ### Universal elastic anisotropy, $A^U$
-# $A^U = 5(G_V/G_R) + (K_V/K_R) - 6 \geq 0$
-
-# In[12]:
-
-
-au = 5 * (Gv / Gr) + (Kv / Kr) - 6
-if au < 0:
-    au = 0
-au
-
-
-# ### Isotropic Poisson ratio, $\mu$
-# $\mu = (3K_{VRH} - 2G_{VRH})/(6K_{VRH} + 2G_{VRH})$
-
-# In[13]:
-
-
-mu = (3 * Kvrh - 2 * Gvrh) / (6 * Kvrh + 2 * Gvrh )
-mu
-
-
-# ### Pugh's ration, $\eta$
-# $\eta = K_{VRH} / G_{VRH}$
-
-# In[14]:
-
-
-eta = Kvrh/Gvrh
-eta
-
-
-# ### Pugh's hardness estimate, $H_{Pugh}$ (GPa)
-# $H_{Pugh} = 2 (G_{VRH}/\eta^2)^{0.585} - 3$
-
-# In[15]:
-
-
-H_pugh = 2 * (Gvrh/eta**2)**0.585 - 3
-H_pugh
-
-
-# In[ ]:
-
-
-
-
+def main():
+    # Elastic tensor
+    elastic_tensor = get_elastic_tensor("OUTCAR")
+    c_ij = elastic_tensor / 10  # (GPa)
+
+    # Compliance tensor (GPa)
+    s_ij = np.linalg.inv(c_ij)
+
+    # Voigt bulk modulus (GPa)
+    k_v = (
+        (c_ij[0, 0] + c_ij[1, 1] + c_ij[2, 2])
+        + 2 * (c_ij[0, 1] + c_ij[1, 2] + c_ij[2, 0])
+    ) / 9
+
+    # Reuss bulk modulus (GPa)
+    k_r = 1 / (
+        (s_ij[0, 0] + s_ij[1, 1] + s_ij[2, 2])
+        + 2 * (s_ij[0, 1] + s_ij[1, 2] + s_ij[2, 0])
+    )
+
+    # Voigt shear modulus (GPa)
+    g_v = (
+        (c_ij[0, 0] + c_ij[1, 1] + c_ij[2, 2])
+        - (c_ij[0, 1] + c_ij[1, 2] + c_ij[2, 0])
+        + 3 * (c_ij[3, 3] + c_ij[4, 4] + c_ij[5, 5])
+    ) / 15
+
+    # Reuss shear modulus (GPa)
+    g_r = 15 / (
+        4 * (s_ij[0, 0] + s_ij[1, 1] + s_ij[2, 2])
+        - 4 * (s_ij[0, 1] + s_ij[1, 2] + s_ij[2, 0])
+        + 3 * (s_ij[3, 3] + s_ij[4, 4] + s_ij[5, 5])
+    )
+
+    # Voigt-Reuss-Hill bulk modulus (GPa)
+    k_vrh = (k_v + k_r) / 2
+
+    # Voigt-Reuss-Hill shear modulus (GPa)
+    g_vrh = (g_v + g_r) / 2
+
+    # Universal elastic anisotropy
+    au = 5 * (g_v / g_r) + (k_v / k_r) - 6
+    if au < 0:
+        au = 0
+
+    # Isotropic Poisson ratio
+    mu = (3 * k_vrh - 2 * g_vrh) / (6 * k_vrh + 2 * g_vrh)
+
+    # Pugh's ratio
+    eta = k_vrh / g_vrh
+
+    # Pugh's hardness estimate (GPa)
+    hardness_pugh = 2 * (g_vrh / eta ** 2) ** 0.585 - 3
+
+
+if __name__ == "__main__":
+    main()
