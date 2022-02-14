@@ -17,7 +17,7 @@ date;
 
 echo 'Working directory:' $1
 
-# export PATH=/home/salil.bavdekar/.conda/envs/ai_gasp/bin:$PATH
+export PATH=/home/salil.bavdekar/.conda/envs/ai_gasp/bin:$PATH
 python intrinsic_hardness_prepped.py $1
 
 echo 'Done.'

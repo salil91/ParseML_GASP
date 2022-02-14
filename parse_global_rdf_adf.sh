@@ -18,7 +18,7 @@ date;
 echo 'Working directory:' $1
 echo 'Elements:' $2 $3
 
-# export PATH=/home/salil.bavdekar/.conda/envs/ai_gasp/bin:$PATH
+export PATH=/home/salil.bavdekar/.conda/envs/ai_gasp/bin:$PATH
 python parse_global_rdf_adf.py $1 $2 $3
 
 echo 'Done.'
